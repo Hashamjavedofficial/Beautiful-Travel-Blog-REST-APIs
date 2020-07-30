@@ -1,5 +1,5 @@
-const uuid = require("uuid");
-
+const { validationResult } = require("express-validator");
+const getLocation = require("../utils/getLocation");
 let { DUMMY_PLACES } = require("../helper/DUMMY_DATA");
 const Httperror = require("../helper/Httperror");
 
@@ -21,21 +21,35 @@ const getPlaces = (req, res, next) => {
   res.status(200).send({ place });
 };
 
-const newPlace = (req, res, next) => {
-  const { id, title, description, address, location, creator } = req.body;
-  const place = {
-    id,
-    title,
-    description,
-    address,
-    location,
-    creator,
-  };
-  DUMMY_PLACES.push(place);
-  res.status(201).json(place);
+const newPlace = async (req, res, next) => {
+  const error = validationResult(req);
+  if (!error.isEmpty()) {
+    return next(new Httperror("Input is not valid", 422));
+  }
+
+  const { id, title, description, address, creator } = req.body;
+  try {
+    const location = await getLocation(address);
+    const place = {
+      id,
+      title,
+      description,
+      address,
+      location,
+      creator,
+    };
+    DUMMY_PLACES.push(place);
+    res.status(201).json(place);
+  } catch (error) {
+    return next(new Httperror("Invalid location", 422));
+  }
 };
 
 const updatePlaceById = (req, res, next) => {
+  const error = validationResult(req);
+  if (!error.isEmpty()) {
+    return next(new Httperror("Invalid inputs", 422));
+  }
   const checkKeys = Object.keys(req.body);
   const checkProperties = [
     "location",

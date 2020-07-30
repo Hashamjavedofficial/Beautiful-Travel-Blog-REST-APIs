@@ -1,5 +1,5 @@
 const Httperror = require("../helper/Httperror");
-
+const { validationResult } = require("express-validator");
 const DUMMY_USERS = [
   {
     id: 87,
@@ -14,10 +14,14 @@ const getUsers = (req, res, next) => {
 };
 
 const signUp = (req, res, next) => {
+  const error = validationResult(req);
+  if (!error.isEmpty()) {
+    return next(new Httperror("Not valid inputs", 422));
+  }
   const { name, email, password } = req.body;
   const userFound = DUMMY_USERS.find((user) => user.email === req.body.email);
   if (userFound) {
-    return next(new Error("Email already exist!", 401));
+    return next(new Error("Email already exist!", 422));
   }
   const newUser = { id: Math.random(1, 1000), name, email, password };
   DUMMY_USERS.push(newUser);
