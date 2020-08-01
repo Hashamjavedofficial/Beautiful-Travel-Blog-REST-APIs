@@ -1,5 +1,5 @@
 const express = require("express");
-const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
 
 const placesRoute = require("./routes/places-routes");
 const userRoute = require("./routes/users-routes");
@@ -8,8 +8,6 @@ const { errorHandlerMiddleware } = require("./middlewares/error-handler");
 const Httperror = require("./helper/Httperror");
 
 const app = express();
-
-const port = process.env.PORT || 5000;
 
 app.use(express.json());
 app.use("/api/places", placesRoute);
@@ -21,6 +19,17 @@ app.use((req, res, next) => {
 
 app.use(errorHandlerMiddleware);
 
-app.listen(port, () => {
-  console.log("server running on port " + port);
-});
+mongoose
+  .connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useCreateIndex: true,
+    useUnifiedTopology: true,
+  })
+  .then((response) => {
+    app.listen(process.env.PORT, () => {
+      console.log("server running on port " + process.env.PORT);
+    });
+  })
+  .catch((error) => {
+    console.log(error.message);
+  });
