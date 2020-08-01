@@ -7,7 +7,12 @@ const router = express.Router();
 const signUpValidators = [
   check("name").notEmpty(),
   check("email").normalizeEmail().isEmail(),
-  check("password").isLength({ min: 5 }),
+  check("password").isLength({ min: 6 }),
+];
+
+const signInValidators = [
+  check("email").normalizeEmail().isEmail(),
+  check("password").isLength({ min: 6 }),
 ];
 
 router.get("/", getUsers);

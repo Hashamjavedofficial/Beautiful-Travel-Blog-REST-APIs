@@ -1,40 +1,62 @@
 const Httperror = require("../helper/Httperror");
 const { validationResult } = require("express-validator");
-const DUMMY_USERS = [
-  {
-    id: 87,
-    name: "Hasham Javed",
-    password: "rehanyasin87",
-    email: "hasham@gmail.com",
-  },
-];
+const User = require("../models/users-model");
 
-const getUsers = (req, res, next) => {
-  res.status(200).send(DUMMY_USERS);
+const getUsers = async (req, res, next) => {
+  try {
+    const users = await User.find({}, "name email");
+    if (users.length === 0) {
+      return next(new Httperror("Sorry no user exists right now", 404));
+    }
+    res.json({ users: users.map((user) => user.toObject({ getters: true })) });
+  } catch (error) {
+    return next(
+      new Httperror("Ops something went wrong, try again later", 500)
+    );
+  }
 };
 
-const signUp = (req, res, next) => {
+const signUp = async (req, res, next) => {
   const error = validationResult(req);
+  console.log(error);
   if (!error.isEmpty()) {
     return next(new Httperror("Not valid inputs", 422));
   }
-  const { name, email, password } = req.body;
-  const userFound = DUMMY_USERS.find((user) => user.email === req.body.email);
-  if (userFound) {
-    return next(new Error("Email already exist!", 422));
+  try {
+    const emailVerify = await User.findOne({ email: req.body.email });
+    if (emailVerify) {
+      return next(new Httperror("Email already exist, Please Signin", 422));
+    }
+    const user = new User({
+      name: req.body.name,
+      password: req.body.password,
+      email: req.body.email,
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/NYC_Empire_State_Building.jpg/640px-NYC_Empire_State_Building.jpg",
+      places: req.body.places,
+    });
+    user.save().then((response) => {
+      res.status(201).json({ user: response.toObject({ getters: true }) });
+    });
+  } catch (error) {
+    return next(
+      new Httperror("Ops something went wrong, Please try again later", 500)
+    );
   }
-  const newUser = { id: Math.random(1, 1000), name, email, password };
-  DUMMY_USERS.push(newUser);
-  res.status(201).json(newUser);
 };
 
-const signIn = (req, res, next) => {
-  const user = DUMMY_USERS.find((user) => user.email === req.body.email);
-  if (!user || user.password !== req.body.password) {
-    return next(new Error("Could not find user, invalid cresedential", 401));
+const signIn = async (req, res, next) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+    if (!user || user.password !== req.body.password) {
+      return next(new Httperror("Invalid inputs, Try again", 422));
+    }
+    res.status(200).json({ user: user.toObject({ getters: true }) });
+  } catch (error) {
+    return next(
+      new Httperror("Ops something went wrong, Try again later", 500)
+    );
   }
-
-  res.status(200).json(user);
 };
 
 module.exports = {

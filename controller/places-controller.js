@@ -1,24 +1,36 @@
 const { validationResult } = require("express-validator");
 const getLocation = require("../utils/getLocation");
-let { DUMMY_PLACES } = require("../helper/DUMMY_DATA");
-const Httperror = require("../helper/Httperror");
 
-const getUser = (req, res, next) => {
-  const userPlaces = DUMMY_PLACES.filter(
-    (place) => place.creator === req.params.uid
-  );
-  if (userPlaces.length === 0) {
-    throw new Httperror("Not found the user", 404);
+const Httperror = require("../helper/Httperror");
+const Place = require("../models/places-model");
+const { findById, find } = require("../models/places-model");
+
+const getUser = async (req, res, next) => {
+  try {
+    const places = await Place.find({ creator: req.params.uid });
+    if (!places) {
+      return error(new Httperror("Not found the places", 404));
+    }
+    res
+      .status(200)
+      .json({
+        places: places.map((place) => place.toObject({ getter: true })),
+      });
+  } catch (error) {
+    return next(new Httperror("Something went wrong try again later", 500));
   }
-  res.status(200).send(userPlaces);
 };
 
-const getPlaces = (req, res, next) => {
-  const place = DUMMY_PLACES.filter((place) => place.id === req.params.pid);
-  if (place.length === 0) {
-    return next(new Httperror("Not found the places", 404));
+const getPlaces = async (req, res, next) => {
+  try {
+    const place = await Place.findById(req.params.pid);
+    if (!place) {
+      return next(new Httperror("Not found the places", 404));
+    }
+    res.status(200).send({ place: place.toObject({ getters: true }) });
+  } catch (error) {
+    return next(new Httperror("Something went wrong try again later", 500));
   }
-  res.status(200).send({ place });
 };
 
 const newPlace = async (req, res, next) => {
@@ -27,55 +39,64 @@ const newPlace = async (req, res, next) => {
     return next(new Httperror("Input is not valid", 422));
   }
 
-  const { id, title, description, address, creator } = req.body;
+  const { id, title, description, address, creator, image } = req.body;
   try {
     const location = await getLocation(address);
-    const place = {
+    const place = new Place({
       id,
       title,
       description,
       address,
+      image,
       location,
       creator,
-    };
-    DUMMY_PLACES.push(place);
-    res.status(201).json(place);
+    });
+    place
+      .save()
+      .then((response) => {
+        res.status(201).json({ place: response.toObject({ getters: true }) });
+      })
+      .catch((error) => {
+        return next(new Httperror("Ops something went wrong try again", 500));
+      });
   } catch (error) {
     return next(new Httperror("Invalid location", 422));
   }
 };
 
-const updatePlaceById = (req, res, next) => {
+const updatePlaceById = async (req, res, next) => {
   const error = validationResult(req);
   if (!error.isEmpty()) {
     return next(new Httperror("Invalid inputs", 422));
   }
-  const checkKeys = Object.keys(req.body);
-  const checkProperties = [
-    "location",
-    "title",
-    "description",
-    "address",
-    "location",
-    "creator",
-  ];
-  const isValid = checkKeys.every((key) => checkProperties.includes(key));
-  if (!isValid) {
-    return next(new Httperror("Property is Invalid", 400));
-  }
-  const newData = DUMMY_PLACES.map((place) => {
-    if (place.id === req.params.id) {
-      return checkKeys.forEach((key) => (place[key] = req.body[key]));
-    } else {
-      return place;
+  try {
+    const updatedPlace = await Place.findById(req.params.pid);
+    updatedPlace.title = req.body.title;
+    updatedPlace.description = req.body.description;
+    if (!updatedPlace) {
+      return next(new Httperror("Place not found try again", 404));
     }
-  });
-  DUMMY_PLACES = newData;
-  res.status(201).json(newData);
+    updatedPlace.save().then((response) => {
+      res.status(201).json({ place: updatedPlace.toObject({ getters: true }) });
+    });
+  } catch (error) {
+    return next(new Httperror("Ops something went wrong try again later", 500));
+  }
 };
 
-const deletePlace = (req, res, next) => {
-  res.status(200).json("Working");
+const deletePlace = async (req, res, next) => {
+  try {
+    console.log(req.params.pid);
+    const place = await Place.findById(req.params.pid);
+    if (!place) {
+      return next(new Httperror("Place not found", 404));
+    }
+    place.remove().then((response) => {
+      res.status(200).json({ message: "Successfully deleted" });
+    });
+  } catch (error) {
+    return next(new Httperror("Something went wrong try again later", 500));
+  }
 };
 
 module.exports = {
