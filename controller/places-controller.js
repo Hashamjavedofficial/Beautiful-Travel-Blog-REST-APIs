@@ -5,20 +5,20 @@ const mongoose = require("mongoose");
 const Httperror = require("../helper/Httperror");
 const Place = require("../models/places-model");
 const User = require("../models/users-model");
-const { response } = require("express");
 
 const getUser = async (req, res, next) => {
+  let places;
   try {
-    const places = await Place.find({ creator: req.params.uid });
-    if (!places) {
-      return error(new Httperror("Not found the places", 404));
+    places = await User.findById(req.params.uid).populate("places");
+    if (!places || places.places.length === 0) {
+      return next(new Httperror("Not found the places", 404));
     }
-    res.status(200).json({
-      places: places.map((place) => place.toObject({ getter: true })),
-    });
   } catch (error) {
     return next(new Httperror("Something went wrong try again later", 500));
   }
+  res.status(200).json({
+    places: places.places.map((place) => place.toObject({ getter: true })),
+  });
 };
 
 const getPlaces = async (req, res, next) => {
