@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const Httperror = require("../helper/Httperror");
 const Place = require("../models/places-model");
 const User = require("../models/users-model");
+const { response } = require("express");
 
 const getUser = async (req, res, next) => {
   try {
@@ -100,18 +101,35 @@ const updatePlaceById = async (req, res, next) => {
 };
 
 const deletePlace = async (req, res, next) => {
+  let place;
   try {
-    console.log(req.params.pid);
-    const place = await Place.findById(req.params.pid);
+    place = await await Place.findById(req.params.pid).populate("creator");
     if (!place) {
       return next(new Httperror("Place not found", 404));
     }
+    const index = place.creator.places.findIndex((key) => key === place._id);
+    place.creator.places.splice(index, 1);
+    await place.creator.save();
     place.remove().then((response) => {
-      res.status(200).json({ message: "Successfully deleted" });
+      res.status(200).json(response);
     });
+    // place.remove().then((response) => {
+    // const user =await User.findById(response.creator);
+    // });
   } catch (error) {
     return next(new Httperror("Something went wrong try again later", 500));
   }
+
+  // try {
+  //   const sess = await mongoose.startSession();
+  //   sess.startTransaction();
+  //   await place.remove({ session: sess });
+  //   place.creator.places.pull(place);
+  //   await place.creator.save({ session: sess });
+  //   await sess.commitTransaction();
+  // } catch (error) {
+  //   return next(new Httperror("Something went wrong try again later", 500));
+  // }
 };
 
 module.exports = {
