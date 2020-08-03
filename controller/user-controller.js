@@ -33,7 +33,7 @@ const signUp = async (req, res, next) => {
       email: req.body.email,
       image:
         "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/NYC_Empire_State_Building.jpg/640px-NYC_Empire_State_Building.jpg",
-      places: req.body.places,
+      places: [],
     });
     user.save().then((response) => {
       res.status(201).json({ user: response.toObject({ getters: true }) });

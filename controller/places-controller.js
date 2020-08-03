@@ -1,9 +1,10 @@
 const { validationResult } = require("express-validator");
 const getLocation = require("../utils/getLocation");
+const mongoose = require("mongoose");
 
 const Httperror = require("../helper/Httperror");
 const Place = require("../models/places-model");
-const { findById, find } = require("../models/places-model");
+const User = require("../models/users-model");
 
 const getUser = async (req, res, next) => {
   try {
@@ -11,11 +12,9 @@ const getUser = async (req, res, next) => {
     if (!places) {
       return error(new Httperror("Not found the places", 404));
     }
-    res
-      .status(200)
-      .json({
-        places: places.map((place) => place.toObject({ getter: true })),
-      });
+    res.status(200).json({
+      places: places.map((place) => place.toObject({ getter: true })),
+    });
   } catch (error) {
     return next(new Httperror("Something went wrong try again later", 500));
   }
@@ -40,9 +39,10 @@ const newPlace = async (req, res, next) => {
   }
 
   const { id, title, description, address, creator, image } = req.body;
+  let place;
   try {
     const location = await getLocation(address);
-    const place = new Place({
+    place = new Place({
       id,
       title,
       description,
@@ -51,16 +51,31 @@ const newPlace = async (req, res, next) => {
       location,
       creator,
     });
-    place
-      .save()
-      .then((response) => {
-        res.status(201).json({ place: response.toObject({ getters: true }) });
-      })
-      .catch((error) => {
-        return next(new Httperror("Ops something went wrong try again", 500));
-      });
   } catch (error) {
     return next(new Httperror("Invalid location", 422));
+  }
+  let user;
+  try {
+    user = await User.findById(creator);
+    if (!user) {
+      return next(new Httperror("User not found", 404));
+    }
+  } catch (error) {
+    return next(new Httperror("Something went wrong, Try again later", 500));
+  }
+  try {
+    // const sess = await mongoose.startSession();
+    // sess.startTransaction();
+    // await place.save({ session: sess });
+    // user.places.push(place);
+    // await user.save({ session: sess });
+    // await sess.commitTransaction();
+    const placeRes = await place.save();
+    user.places.push(placeRes._id);
+    await user.save();
+    res.status(201).json(place);
+  } catch (error) {
+    return next(new Httperror("User is not created try again later", 500));
   }
 };
 
