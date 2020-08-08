@@ -2,3 +2,4 @@ node_modules
 utils/getLocation
 config
 .vscode
+.idea

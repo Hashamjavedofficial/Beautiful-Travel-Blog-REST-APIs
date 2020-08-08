@@ -17,7 +17,7 @@ const getUser = async (req, res, next) => {
     return next(new Httperror("Something went wrong try again later", 500));
   }
   res.status(200).json({
-    places: places.places.map((place) => place.toObject({ getter: true })),
+    places: places.places.map((place) => place.toObject({ getters: true })),
   });
 };
 
