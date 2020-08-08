@@ -19,6 +19,6 @@ router.get("/", getUsers);
 
 router.post("/signup", signUpValidators, signUp);
 
-router.post("/signin", signIn);
+router.post("/login", signIn);
 
 module.exports = router;

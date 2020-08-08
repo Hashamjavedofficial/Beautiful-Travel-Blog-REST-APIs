@@ -38,17 +38,16 @@ const newPlace = async (req, res, next) => {
   if (!error.isEmpty()) {
     return next(new Httperror("Input is not valid", 422));
   }
-
-  const { id, title, description, address, creator, image } = req.body;
+  const { title, description, address, creator, image } = req.body;
   let place;
   try {
     const location = await getLocation(address);
     place = new Place({
-      id,
       title,
       description,
       address,
-      image,
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/NYC_Empire_State_Building.jpg/640px-NYC_Empire_State_Building.jpg",
       location,
       creator,
     });
@@ -65,15 +64,16 @@ const newPlace = async (req, res, next) => {
     return next(new Httperror("Something went wrong, Try again later", 500));
   }
   try {
-    // const sess = await mongoose.startSession();
-    // sess.startTransaction();
-    // await place.save({ session: sess });
-    // user.places.push(place);
-    // await user.save({ session: sess });
-    // await sess.commitTransaction();
-    const placeRes = await place.save();
-    user.places.push(placeRes._id);
-    await user.save();
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await place.save({ session: sess });
+    user.places.push(place);
+    await user.save({ session: sess });
+    await sess.commitTransaction();
+
+    // const placeRes = await place.save();
+    // user.places.push(placeRes._id);
+    // await user.save();
     res.status(201).json(place);
   } catch (error) {
     return next(new Httperror("User is not created try again later", 500));

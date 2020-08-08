@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-
+const bodyParser = require("body-parser");
 const placesRoute = require("./routes/places-routes");
 const userRoute = require("./routes/users-routes");
 
@@ -9,15 +9,16 @@ const Httperror = require("./helper/Httperror");
 
 const app = express();
 
-app.use(express.json());
+app.use(bodyParser.json());
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With , Content-Type , Accept ,Authorization"
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
-  res.setHeader("Access-Control-Allow-Methods", "POST,GET,PATCH,DELETE");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
+
   next();
 });
 
@@ -31,7 +32,7 @@ app.use((req, res, next) => {
 app.use(errorHandlerMiddleware);
 
 mongoose
-  .connect(process.env.MONGO_URL, {
+  .connect(process.env.MONGO_ATLAS, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true,
