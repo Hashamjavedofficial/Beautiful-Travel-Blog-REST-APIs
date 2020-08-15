@@ -31,8 +31,7 @@ const signUp = async (req, res, next) => {
       name: req.body.name,
       password: req.body.password,
       email: req.body.email,
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/NYC_Empire_State_Building.jpg/640px-NYC_Empire_State_Building.jpg",
+      image: req.file.path,
       places: [],
     });
     user.save().then((response) => {
