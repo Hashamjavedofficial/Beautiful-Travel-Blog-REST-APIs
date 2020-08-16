@@ -7,6 +7,7 @@ const {
   updatePlaceById,
   deletePlace,
 } = require("../controller/places-controller");
+const fileUpload = require("../middlewares/file-upload");
 
 const router = express.Router();
 const validatonForPost = [
@@ -22,7 +23,7 @@ router.get("/user/:uid", getUser);
 
 router.get("/:pid", getPlaces);
 
-router.post("/", validatonForPost, newPlace);
+router.post("/", fileUpload.single("image"), validatonForPost, newPlace);
 
 router.patch("/:pid", validationForPatch, updatePlaceById);
 

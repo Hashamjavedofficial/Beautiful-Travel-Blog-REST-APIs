@@ -46,8 +46,7 @@ const newPlace = async (req, res, next) => {
       title,
       description,
       address,
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/NYC_Empire_State_Building.jpg/640px-NYC_Empire_State_Building.jpg",
+      image: req.file.path,
       location,
       creator,
     });
