@@ -1,5 +1,4 @@
 const multer = require("multer");
-const uuid = require("uuid");
 
 const MIME_TYPES = {
   "image/png": ".png",
