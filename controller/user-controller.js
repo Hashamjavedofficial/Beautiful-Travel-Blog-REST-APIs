@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const Httperror = require("../helper/Httperror");
 const { validationResult } = require("express-validator");
@@ -23,6 +24,7 @@ const signUp = async (req, res, next) => {
   if (!error.isEmpty()) {
     return next(new Httperror("Not valid inputs", 422));
   }
+  let user;
   try {
     const emailVerify = await User.findOne({ email: req.body.email });
     const hashPassword = await bcrypt.hash(req.body.password, 12);
@@ -30,21 +32,36 @@ const signUp = async (req, res, next) => {
     if (emailVerify) {
       return next(new Httperror("Email already exist, Please Signin", 422));
     }
-    const user = new User({
+    user = new User({
       name: req.body.name,
       password: hashPassword,
       email: req.body.email,
       image: req.file.path,
       places: [],
     });
-    user.save().then((response) => {
-      res.status(201).json({ user: response.toObject({ getters: true }) });
-    });
   } catch (error) {
     return next(
       new Httperror("Ops something went wrong, Please try again later", 500)
     );
   }
+  try {
+    await user.save();
+  } catch (error) {
+    return next(new Httperror("Something went wrong,  try again later", 500));
+  }
+
+  let token;
+  try {
+    token = await jwt.sign(
+      { userId: user.id, email: user.email },
+      "this_is_jsonwebtoken_secret",
+      { expiresIn: "1h" }
+    );
+  } catch (error) {
+    return next(new Httperror("Something went wrong, try again later", 500));
+  }
+
+  res.status(201).json({ userId: user.id, email: user.email, token });
 };
 
 const signIn = async (req, res, next) => {
@@ -68,9 +85,21 @@ const signIn = async (req, res, next) => {
   if (!isValidPassword) {
     return next(new Httperror("Password is not correct", 500));
   }
+  let token;
+  try {
+    token = await jwt.sign(
+      { userId: user.id, email: user.email },
+      "this_is_jsonwebtoken_secret",
+      { expiresIn: "1h" }
+    );
+  } catch (error) {
+    return next(new Httperror("Something went wrong, try again later", 500));
+  }
   res.status(200).json({
     message: "Successfully login",
-    user: user.toObject({ getters: true }),
+    userId: user.id,
+    email: user.email,
+    token,
   });
 };
 
