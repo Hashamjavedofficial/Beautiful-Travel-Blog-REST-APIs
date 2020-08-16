@@ -1,3 +1,5 @@
+const bcrypt = require("bcryptjs");
+
 const Httperror = require("../helper/Httperror");
 const { validationResult } = require("express-validator");
 const User = require("../models/users-model");
@@ -23,13 +25,14 @@ const signUp = async (req, res, next) => {
   }
   try {
     const emailVerify = await User.findOne({ email: req.body.email });
+    const hashPassword = await bcrypt.hash(req.body.password, 12);
 
     if (emailVerify) {
       return next(new Httperror("Email already exist, Please Signin", 422));
     }
     const user = new User({
       name: req.body.name,
-      password: req.body.password,
+      password: hashPassword,
       email: req.body.email,
       image: req.file.path,
       places: [],
@@ -45,20 +48,30 @@ const signUp = async (req, res, next) => {
 };
 
 const signIn = async (req, res, next) => {
+  let user;
   try {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user || user.password !== req.body.password) {
+    user = await User.findOne({ email: req.body.email });
+    if (!user) {
       return next(new Httperror("Invalid inputs, Try again", 422));
     }
-    res.status(200).json({
-      message: "Successfully login",
-      user: user.toObject({ getters: true }),
-    });
   } catch (error) {
     return next(
       new Httperror("Ops something went wrong, Try again later", 500)
     );
   }
+  let isValidPassword;
+  try {
+    isValidPassword = await bcrypt.compare(req.body.password, user.password);
+  } catch (error) {
+    return next(new Httperror("Something went wrong try again later", 500));
+  }
+  if (!isValidPassword) {
+    return next(new Httperror("Password is not correct", 500));
+  }
+  res.status(200).json({
+    message: "Successfully login",
+    user: user.toObject({ getters: true }),
+  });
 };
 
 module.exports = {
