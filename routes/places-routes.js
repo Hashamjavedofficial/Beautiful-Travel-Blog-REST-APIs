@@ -8,6 +8,7 @@ const {
   deletePlace,
 } = require("../controller/places-controller");
 const fileUpload = require("../middlewares/file-upload");
+const auth = require("../middlewares/auth-middleware");
 
 const router = express.Router();
 const validatonForPost = [
@@ -22,6 +23,8 @@ const validationForPatch = [
 router.get("/user/:uid", getUser);
 
 router.get("/:pid", getPlaces);
+
+router.use(auth);
 
 router.post("/", fileUpload.single("image"), validatonForPost, newPlace);
 
