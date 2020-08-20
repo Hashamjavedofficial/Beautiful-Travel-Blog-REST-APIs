@@ -20,6 +20,7 @@ const validationForPatch = [
   check("title").notEmpty(),
   check("description").isLength({ min: 5 }),
 ];
+
 router.get("/user/:uid", getUser);
 
 router.get("/:pid", getPlaces);

@@ -54,7 +54,7 @@ const signUp = async (req, res, next) => {
   try {
     token = await jwt.sign(
       { userId: user.id, email: user.email },
-      "this_is_jsonwebtoken_secret",
+      process.env.JWT,
       { expiresIn: "1h" }
     );
   } catch (error) {
@@ -89,7 +89,7 @@ const signIn = async (req, res, next) => {
   try {
     token = await jwt.sign(
       { userId: user.id, email: user.email },
-      "this_is_jsonwebtoken_secret",
+      process.env.JWT,
       { expiresIn: "1h" }
     );
   } catch (error) {

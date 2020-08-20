@@ -73,9 +73,6 @@ const newPlace = async (req, res, next) => {
     await user.save({ session: sess });
     await sess.commitTransaction();
 
-    // const placeRes = await place.save();
-    // user.places.push(placeRes._id);
-    // await user.save();
     res.status(201).json(place);
   } catch (error) {
     return next(new Httperror("User is not created try again later", 500));
@@ -94,6 +91,9 @@ const updatePlaceById = async (req, res, next) => {
     if (!updatedPlace) {
       return next(new Httperror("Place not found try again", 404));
     }
+    if (req.userData.userId !== updatedPlace.creator.toString()) {
+      return next(new Httperror("You are not allowed!", 401));
+    }
     updatedPlace.save().then((response) => {
       res.status(201).json({ place: updatedPlace.toObject({ getters: true }) });
     });
@@ -105,9 +105,12 @@ const updatePlaceById = async (req, res, next) => {
 const deletePlace = async (req, res, next) => {
   let place;
   try {
-    place = await await Place.findById(req.params.pid).populate("creator");
+    place = await Place.findById(req.params.pid).populate("creator");
     if (!place) {
       return next(new Httperror("Place not found", 404));
+    }
+    if (req.userData.userId !== place.creator.id.toString()) {
+      return next(new Httperror("You are not Allowed", 401));
     }
     const imagePath = place.image;
 
@@ -120,23 +123,9 @@ const deletePlace = async (req, res, next) => {
       });
       res.status(200).json(response);
     });
-    // place.remove().then((response) => {
-    // const user =await User.findById(response.creator);
-    // });
   } catch (error) {
     return next(new Httperror("Something went wrong try again later", 500));
   }
-
-  // try {
-  //   const sess = await mongoose.startSession();
-  //   sess.startTransaction();
-  //   await place.remove({ session: sess });
-  //   place.creator.places.pull(place);
-  //   await place.creator.save({ session: sess });
-  //   await sess.commitTransaction();
-  // } catch (error) {
-  //   return next(new Httperror("Something went wrong try again later", 500));
-  // }
 };
 
 module.exports = {
